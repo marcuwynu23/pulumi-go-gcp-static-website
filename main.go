@@ -1,9 +1,6 @@
 package main
 
 import (
-	"path/filepath"
-	"strings"
-
 	"github.com/pulumi/pulumi-gcp/sdk/v9/go/gcp/storage"
 	"github.com/pulumi/pulumi-random/sdk/v4/go/random"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -12,25 +9,24 @@ import (
 
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
-		cfg := config.New(ctx, "")
 
-		projectID := cfg.Require("gcp:project")
-		region := cfg.Get("gcp:region")
+		projectID := config.Require(ctx, "gcp:project")
+		region := config.Get(ctx, "gcp:region")
 		if region == "" {
 			region = "us-central1"
 		}
 
-		bucketName := cfg.Require("website:bucketName")
-		mainPageSuffix := cfg.Get("website:mainPageSuffix")
+		bucketName := config.Require(ctx, "website:bucketName")
+		mainPageSuffix := config.Get(ctx, "website:mainPageSuffix")
 		if mainPageSuffix == "" {
 			mainPageSuffix = "index.html"
 		}
-		notFoundPage := cfg.Get("website:notFoundPage")
+		notFoundPage := config.Get(ctx, "website:notFoundPage")
 		if notFoundPage == "" {
 			notFoundPage = "404.html"
 		}
-		enablePublicAccess := cfg.GetBool("website:enablePublicAccess")
-		websiteContentPath := cfg.Get("website:websiteContentPath")
+		enablePublicAccess := config.GetBool(ctx, "website:enablePublicAccess")
+		websiteContentPath := config.Get(ctx, "website:websiteContentPath")
 		if websiteContentPath == "" {
 			websiteContentPath = "website"
 		}
@@ -45,10 +41,10 @@ func main() {
 
 		// Create storage bucket for website
 		websiteBucket, err := storage.NewBucket(ctx, "website-bucket", &storage.BucketArgs{
-			Name: pulumi.Sprintf("%s-%s", bucketName, bucketSuffix.Hex),
-			Location: pulumi.String(region),
-			StorageClass: pulumi.String("STANDARD"),
-			ForceDestroy: pulumi.Bool(true),
+			Name:                     pulumi.Sprintf("%s-%s", bucketName, bucketSuffix.Hex),
+			Location:                 pulumi.String(region),
+			StorageClass:             pulumi.String("STANDARD"),
+			ForceDestroy:             pulumi.Bool(true),
 			UniformBucketLevelAccess: pulumi.Bool(true),
 			Website: &storage.BucketWebsiteArgs{
 				MainPageSuffix: pulumi.String(mainPageSuffix),
@@ -78,6 +74,8 @@ func main() {
 		// For now, we'll export the bucket info for manual upload
 
 		// Export outputs
+		ctx.Export("projectID", pulumi.String(projectID))
+		ctx.Export("websiteContentPath", pulumi.String(websiteContentPath))
 		ctx.Export("bucketName", websiteBucket.Name)
 		ctx.Export("bucketUrl", websiteBucket.Url)
 		ctx.Export("websiteEndpoint", pulumi.Sprintf("https://%s.storage.googleapis.com/", websiteBucket.Name))
