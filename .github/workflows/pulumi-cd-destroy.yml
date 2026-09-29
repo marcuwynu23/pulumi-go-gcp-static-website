@@ -1,0 +1,90 @@
+name: CD - Pulumi GCP Static Website (Destroy)
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: GCP project ID
+        required: true
+        type: string
+      region:
+        description: GCP region
+        required: true
+        type: string
+        default: us-central1
+      bucket_name:
+        description: Base bucket name (random suffix appended)
+        required: true
+        type: string
+      main_page_suffix:
+        description: Index page
+        required: true
+        type: string
+        default: index.html
+      not_found_page:
+        description: 404 page
+        required: true
+        type: string
+        default: 404.html
+      enable_public_access:
+        description: Grant public read access
+        required: true
+        type: string
+        default: "true"
+      website_content_path:
+        description: Path to static website files
+        required: true
+        type: string
+        default: website
+
+env:
+  PULUMI_STACK: static-website-${{ github.event.inputs.region }}
+  PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+  GCP_PROJECT: ${{ github.event.inputs.project_id }}
+  GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+jobs:
+  destroy:
+    name: Pulumi Destroy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Setup Pulumi
+        uses: pulumi/actions@v5
+        with:
+          command: version
+      - name: Configure Pulumi Stack
+        run: |
+          pulumi stack select ${{ env.PULUMI_STACK }} 2>/dev/null || echo "Stack not found"
+      - name: Set Pulumi Config
+        run: |
+          pulumi config set gcp:project ${{ github.event.inputs.project_id }}
+          pulumi config set gcp:region ${{ github.event.inputs.region }}
+          pulumi config set website:bucketName ${{ github.event.inputs.bucket_name }}
+          pulumi config set website:mainPageSuffix ${{ github.event.inputs.main_page_suffix }}
+          pulumi config set website:notFoundPage ${{ github.event.inputs.not_found_page }}
+          pulumi config set website:enablePublicAccess ${{ github.event.inputs.enable_public_access }}
+          pulumi config set website:websiteContentPath ${{ github.event.inputs.website_content_path }}
+      - name: Download Go Dependencies
+        run: go mod download
+      - name: Go Build
+        run: go build -v .
+      - name: Pulumi Preview (Destroy)
+        uses: pulumi/actions@v5
+        with:
+          command: preview
+          stack-name: ${{ env.PULUMI_STACK }}
+          work-dir: .
+          args: --destroy
+      - name: Pulumi Destroy
+        uses: pulumi/actions@v5
+        with:
+          command: destroy
+          stack-name: ${{ env.PULUMI_STACK }}
+          work-dir: .
+          args: --yes
