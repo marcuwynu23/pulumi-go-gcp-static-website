@@ -1,0 +1,9 @@
+encryptionsalt: v1:REPLACE_ME:=v1:REPLACE_ME:REPLACE_ME
+config:
+  gcp:project: YOUR_GCP_PROJECT_ID
+  gcp:region: us-central1
+  website:bucketName: my-static-site
+  website:mainPageSuffix: index.html
+  website:notFoundPage: 404.html
+  website:enablePublicAccess: "true"
+  website:websiteContentPath: website
