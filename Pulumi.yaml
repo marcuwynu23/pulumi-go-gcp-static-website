@@ -2,22 +2,18 @@ name: pulumi-go-gcp-static-website
 description: Pulumi GCP Static Website hosting on Cloud Storage
 runtime: go
 config:
-  gcp:project:
-    description: The ID of the project in which to provision resources
   gcp:region:
     description: The region in which to provision resources
-    default: us-central1
-  website:bucketName:
-    description: The base name of the bucket. A random suffix will be appended for uniqueness.
+    value: us-central1
   website:mainPageSuffix:
     description: The page served when a directory is requested (index page).
-    default: index.html
+    value: index.html
   website:notFoundPage:
     description: The page served when a resource is not found (404 page).
-    default: 404.html
+    value: 404.html
   website:enablePublicAccess:
     description: Whether to grant public read access to allUsers
-    default: "true"
+    value: 'true'
   website:websiteContentPath:
     description: Path to the directory containing the static website files
-    default: website
+    value: website
